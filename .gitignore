@@ -1,0 +1,18 @@
+# Flask related
+__pycache__/
+instance/
+*.py[cod]
+
+# Migrations
+migrations/
+
+
+# Virtual environment
+venv/
+
+# Visual Studio Code related
+.vscode/
+*.code-workspace
+
+# Environment variables
+.env

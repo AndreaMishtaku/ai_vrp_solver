@@ -1,0 +1,16 @@
+from src.model import Edge
+from src.config.database import db
+
+class EdgeRepository:
+    def __init__(self):
+        self.session = db.session
+
+    def create_edge(self, start_node_id, end_node_id, cost, time):
+        new_edge = Edge(start_node_id=start_node_id, end_node_id=end_node_id, cost=cost, time=time)
+        self.session.add(new_edge)
+        self.session.commit()
+        return new_edge
+
+    def delete_edge(self, edge):
+        self.session.delete(edge)
+        self.session.commit()
