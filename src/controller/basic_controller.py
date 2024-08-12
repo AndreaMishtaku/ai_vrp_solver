@@ -19,7 +19,7 @@ class NodeController(Resource):
         node_dict = basic_ns.payload
         basic_service.create_node(node_dict)
         return {'message': 'Node created successfully'}, 201
-    
+
 
         
 @basic_ns.route('/node/<int:id>')
@@ -55,10 +55,3 @@ class NodesController(Resource):
         except Exception as e:
             return {'message': f'An error occurred while processing the file: {str(e)}'}, 500
         
-@basic_ns.route('/get-all-depos')
-class NodesController(Resource):
-    def get(self):
-        try:
-            return basic_service.get_all_nodes(), 200
-        except Exception as e:
-            return {'message': f'An error occurred while processing the file: {str(e)}'}, 500

@@ -5,7 +5,7 @@ class Edge(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_node_id= db.Column(db.Integer,db.ForeignKey('node.id'),nullable=False)
     end_node_id = db.Column(db.Integer,db.ForeignKey('node.id'),nullable=False)
-    cost = db.Column(db.Integer, nullable=False)
+    distance = db.Column(db.Integer, nullable=False)
     time = db.Column(db.Float, nullable=False)
 
 

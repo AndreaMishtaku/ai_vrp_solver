@@ -21,7 +21,7 @@ class BasicService:
     
 
     def create_node(self,dict):
-        new_node= Node(**dict)
+        #new_node= Node(**dict)
         self.node_repository.create_node(dict)
         return
 

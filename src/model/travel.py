@@ -2,7 +2,6 @@ from src.config.database import db
 from sqlalchemy.orm import relationship
 
 class Travel(db.Model):
-    
     id = db.Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
 

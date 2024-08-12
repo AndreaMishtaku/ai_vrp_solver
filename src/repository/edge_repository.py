@@ -5,8 +5,11 @@ class EdgeRepository:
     def __init__(self):
         self.session = db.session
 
-    def create_edge(self, start_node_id, end_node_id, cost, time):
-        new_edge = Edge(start_node_id=start_node_id, end_node_id=end_node_id, cost=cost, time=time)
+    def get_all(self):
+        return self.session.query(Edge).all()
+
+    def create_edge(self, start_node_id, end_node_id, distance, time):
+        new_edge = Edge(start_node_id=start_node_id, end_node_id=end_node_id, distance=distance, time=time)
         self.session.add(new_edge)
         self.session.commit()
         return new_edge
