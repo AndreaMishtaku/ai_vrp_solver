@@ -14,10 +14,12 @@ class DataImportController(Resource):
     def post(self):
         uploaded_file = request.files['locations']
 
+
+        data=read_excel_file(uploaded_file,['Name','Latitude','Longitude','Type','Capacity'])
         if uploaded_file.filename == '':
             return {'message': 'No file selected for uploading'}, 400
         
         try:
-            return  import_service.add_node(None), 200
+            return  import_service.add_node(data), 200
         except Exception as e:
             return {'message': f'An error occurred while processing the file: {str(e)}'}, 500

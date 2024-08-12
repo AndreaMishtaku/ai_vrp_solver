@@ -12,19 +12,14 @@ class ImportService:
 
     def add_node(self, data):
         try:
-            """
-            Adds a list of coordinates to the database.
-            :param data: List of dictionaries with keys 'name', 'latitude', and 'longitude'
-            """
-            #for location in data:
-            #    new_node = Node(name=location[0], latitude=location[1], longitude= location[2])
-            #    self.node_repository.create_node(new_node)
+            for location in data:
+                new_node = Node(name=location[0], latitude=location[1], longitude= location[2],type=location[3],capacity=location[4])
+                self.node_repository.create_node(new_node)
 
             nodes_list=self.node_repository.get_all_nodes()
             depos_list=self.node_repository.get_all_depos()
 
             all_nodes = nodes_list + depos_list
-
 
             for start_node in all_nodes:
                 for end_node in all_nodes:
