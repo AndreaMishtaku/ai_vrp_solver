@@ -46,6 +46,6 @@ Your JSON Response:
 
 
 prompt = PromptTemplate(
-    input_variables=["problem_description"],
+    input_variables=["request_payload"],
     template=prompt_template
 )

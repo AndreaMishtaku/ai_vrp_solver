@@ -12,7 +12,6 @@ class LLMSolver:
         #self.chat = ChatOpenAI(model_name=os.getenv("OPENAI_MODEL_NAME"))
         self.chat = ChatAnthropic(temperature=0, model_name=os.getenv("ANTHROPIC_MODEL_NAME"))
         self.content = system_message
-        
         self.prompt = ChatPromptTemplate(
             input_variables=["content", "messages"],
             messages=[

@@ -1,7 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from src.service import ORToolsService
 
-ortools_ns = Namespace('or', description='Vehicle routing problem (Google)')
+ortools_ns = Namespace('ortools', description='Vehicle routing problem (Google)')
 ortools_service = ORToolsService()
 
 
