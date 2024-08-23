@@ -16,7 +16,6 @@ langsmith==0.1.47
 mysqlclient==2.2.4
 numpy==1.26.4
 openai==1.13.3
-orjson==3.10.0
 pandas==2.2.2
 requests==2.31.0
 SQLAlchemy==2.0.29
