@@ -14,6 +14,9 @@ class NodeRepository:
 
     def get_node_by_id(self, node_id):
         return self.session.query(Node).get(node_id)
+    
+    def get_node_by_name(self,name):
+        return self.session.query(Node).filter_by(name=name).first()
 
     def create_node(self, new_node):
         self.session.add(new_node)
@@ -26,9 +29,7 @@ class NodeRepository:
         else:
             return self.session.query(Node).filter_by(name=name,type=NodeType.NODE).first() is not None
 
-    def update_node(self, node, node_dict):
-        for key, value in node_dict.items():
-            setattr(node, key, value)
+    def update_node(self, node):
         self.session.commit()
         return node
 
