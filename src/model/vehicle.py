@@ -6,7 +6,7 @@ class Vehicle(db.Model):
     plate = db.Column(db.String(10), nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
 
-    travels = relationship("Travel", foreign_keys="[Travel.vehicle_id]")
+    trips = relationship("Trip", foreign_keys="[Trip.vehicle_id]")
 
     def __repr__(self):
         return f'<Vehicle {self.plate}>'

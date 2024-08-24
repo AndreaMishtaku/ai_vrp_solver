@@ -1,25 +1,24 @@
-from src.repository import EdgeRepository,NodeRepository, VehicleRepository
+from src.model import Trip, TripDemands
+from src.repository import EdgeRepository,NodeRepository, VehicleRepository,TripRepository
 from src.payload import Error
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
+from datetime import datetime
 
 class ORToolsService:
     def __init__(self):
         self.node_repository=NodeRepository()
         self.edge_repository=EdgeRepository()
         self.vehicle_repository=VehicleRepository()
+        self.trip_repository=TripRepository()
 
-    def create_data_model(self, travel_dict):
+    def create_data_model(self, trip_dict, depos, nodes, vehicles):
         """Stores the data for the problem."""
-        depos=self.node_repository.get_all_depos()
-        nodes=self.node_repository.get_all_nodes()
-        
-        
-        depot = next((depo for depo in depos if depo.name ==travel_dict['depo_vehicle'][0]['depo']), None)
+        depot = next((depo for depo in depos if depo.name ==trip_dict['depo_vehicle'][0]['depo']), None)
         if depot is None:
-            raise ValueError(f"Depot '{travel_dict['depo_vehicle'][0]['depo']}' not found in the list of all depots.")
+            raise ValueError(f"Depot '{trip_dict['depo_vehicle'][0]['depo']}' not found in the list of all depots.")
         
-        demand_nodes = [node for node in nodes if any(d['node'] == node.name and d['demand'] > 0 for d in travel_dict['demands'])]
+        demand_nodes = [node for node in nodes if any(d['node'] == node.name and d['demand'] > 0 for d in trip_dict['demands'])]
         filtered_nodes =  [depot] + demand_nodes
 
         data = {}
@@ -31,7 +30,7 @@ class ORToolsService:
         original_indices = [node.id for node in filtered_nodes]
 
         demands = [0] * len(filtered_nodes)
-        for demand in travel_dict['demands']:
+        for demand in trip_dict['demands']:
             node_name = demand['node']
             demand_value = demand['demand']
             if node_name in node_name_to_filtered_index:
@@ -40,16 +39,18 @@ class ORToolsService:
 
         data['demands'] = demands
         data['vehicle_capacities'] = []
+
+        #Add the case with more than one vehicle and depo
         #data['starts'] = []
         #data['ends'] = []
 
 
-        for dv in travel_dict['depo_vehicle']:
-            vehicle = self.vehicle_repository.get_by_plate(plate=dv['plate'])
+        for dv in trip_dict['depo_vehicle']:
+            vehicle = next((v for v in vehicles if v.plate == dv['plate']), None)
             data['vehicle_capacities'].append(vehicle.capacity)
 
 
-        data['depot'] =  node_name_to_filtered_index[travel_dict['depo_vehicle'][0]['depo']] 
+        data['depot'] =  node_name_to_filtered_index[trip_dict['depo_vehicle'][0]['depo']] 
         data['num_vehicles'] = len(data['vehicle_capacities'])
 
 
@@ -102,34 +103,20 @@ class ORToolsService:
                 'route': route,
                 'load': route_load,
                 'distance': route_distance
-            })
+                })
                 summary['total_distance'] += route_distance
                 summary['total_load'] += route_load
 
         return summary
 
-    def check_payload(self,travel_dict):     
-        demands=travel_dict['demands']
 
-        for demand in demands:
-            if self.node_repository.check_node_by_name(name=demand['node'],is_depo=False) is False:
-                raise Error(message=f'Location not found!',status_code=404)
-            
-        depo_vehicle=travel_dict['depo_vehicle']
+    def routing_model(self, trip_dict):
+        """Solve the Capacity VRP problem."""
+        self.check_payload(trip_dict)
+        depos, nodes, vehicles = self.fetch_data(trip_dict=trip_dict)
 
-        for dv in depo_vehicle:
-            if self.node_repository.check_node_by_name(name=dv['depo'],is_depo=True) is False:
-                raise Error(message=f'Depo not found!',status_code=404)
-            if self.vehicle_repository.check_vehicle_by_plate(plate=dv['plate']) is False:
-                raise Error(message=f'Vehicle not found!',status_code=404)
-            
-        return True
-
-
-    def routing_model(self, travel_dict):
-        """Solve the CVRP problem."""
         # Instantiate the data problem.
-        data, original_indices = self.create_data_model(travel_dict=travel_dict)
+        data, original_indices = self.create_data_model(travel_dict=trip_dict , depos=depos , nodes=nodes,vehicles=vehicles)
 
         manager = pywrapcp.RoutingIndexManager(
             len(data["distance_matrix"]), data["num_vehicles"], data["depot"]
@@ -170,7 +157,53 @@ class ORToolsService:
         solution = routing.SolveWithParameters(search_parameters)
 
         if solution:
-            return self.get_solution(data, manager, routing, solution, original_indices)
+            result=self.get_solution(data, manager, routing, solution, original_indices)
+
+            # Save trip to repository
+            for route in result['routes']:
+                trip_demands=[]
+                for r in route['route'][1:-1]:
+                    v_node = next((node for node in nodes if node.id == r), None)
+                    demand = next((demand['demand'] for demand in trip_dict['demands'] if demand["node"] == v_node.name ), None)
+                    td=TripDemands(node_id=v_node.id, demand=demand)
+                    trip_demands.append(td) 
+                trip = Trip(vehicle_id=1 ,depo_id=route['route'][0], total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(),demands=trip_demands)
+                self.trip_repository.add_trip(trip)
+
+            return result 
         else:
-            raise Error(message=f'No solution found!',status_code=400)
+            raise Error(message=f'No solution found!', status_code=400)
+        
+
+    def fetch_data(self,trip_dict):
+        depos=self.node_repository.get_all_depos()
+        nodes=self.node_repository.get_all_nodes()
+
+        vehicles=[]
+        
+        for dv in trip_dict['depo_vehicle']:
+            vehicle = self.vehicle_repository.get_by_plate(plate=dv['plate'])
+            vehicles.append(vehicle)
+
+        return depos, nodes, vehicles
+
+
+    def check_payload(self,trip_dict):     
+        demands=trip_dict['demands']
+
+        for demand in demands:
+            if self.node_repository.check_node_by_name(name=demand['node'],is_depo=False) is False:
+                raise Error(message=f'Location not found!',status_code=404)
+            
+        depo_vehicle=trip_dict['depo_vehicle']
+
+        for dv in depo_vehicle:
+            if self.node_repository.check_node_by_name(name=dv['depo'],is_depo=True) is False:
+                raise Error(message=f'Depo not found!',status_code=404)
+            if self.vehicle_repository.check_vehicle_by_plate(plate=dv['plate']) is False:
+                raise Error(message=f'Vehicle not found!',status_code=404)
+            
+        pass
+
+
 

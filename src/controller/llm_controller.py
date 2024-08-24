@@ -14,14 +14,14 @@ depo_vehicle_model=llm_ns.model('Vehicle_Depo', {
     'plate': fields.String()
 })
 
-travel_model=llm_ns.model('Travel',{
+trip_model=llm_ns.model('Trip',{
     'demands':fields.List(fields.Nested(demand_model),required=True),
     'depo_vehicle':fields.List(fields.Nested(depo_vehicle_model),required=True)
 })
 
 @llm_ns.route('/vrp')
 class LLMController(Resource):
-    @llm_ns.expect(travel_model)
+    @llm_ns.expect(trip_model)
     def post(self):
-        travel_dict = llm_ns.payload 
-        return llm_service.solve(travel_dict), 200
+        trip_dict = llm_ns.payload 
+        return llm_service.solve(trip_dict), 200

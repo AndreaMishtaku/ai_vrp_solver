@@ -12,6 +12,7 @@ class Node(db.Model):
     capacity = db.Column(db.Float,nullable=True) 
 
     routes = relationship("Edge", foreign_keys="[Edge.start_node_id]")
+    trips = relationship("Trip", foreign_keys="[Trip.depo_id]")
 
     def __repr__(self):
         return f'<Node {self.name}>'

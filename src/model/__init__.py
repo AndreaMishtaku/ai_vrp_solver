@@ -1,5 +1,5 @@
 from .node import Node
 from .edge import Edge
 from .vehicle import Vehicle
-from .travel import Travel
-from .travel_demands import TravelDemands
+from .trip import Trip
+from .trip_demands import TripDemands

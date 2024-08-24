@@ -1,10 +1,16 @@
 from src.module.llm import LLMSolver
+from src.repository import TripRepository
+from src.model import Trip,TripDemands
 from src.config.database import db
 from sqlalchemy import text
 from src.payload import Error
+from datetime import datetime
 
 
 class LLMService:
+    def __init__(self):
+        self.trip_repository=TripRepository()
+
     def solve(self, request_payload):
         try:
             solver = LLMSolver()
@@ -14,8 +20,20 @@ class LLMService:
                 "demands": request_payload['demands'],
                 "schema": solver.parser.get_format_instructions()
             }
-            print(prompt_inputs)
+
             result = solver.solve(inputs=prompt_inputs)
+
+            nodes=data['nodes']
+            # Save trip to repository
+            for route in result['routes']:
+                trip_demands=[]
+                for r in route['route'][1:-1]:
+                    v_node = next((node for node in nodes if node.id == r), None)
+                    demand = next((demand['demand'] for demand in request_payload['demands'] if demand["node"] == v_node.name ), None)
+                    td=TripDemands(node_id=v_node.id, demand=demand)
+                    trip_demands.append(td) 
+                trip = Trip(vehicle_id=1 ,depo_id=route['route'][0], total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(),demands=trip_demands)
+                self.trip_repository.add_trip(trip)
             return result
         except Exception:
             raise Error(message=f'Solution not found',status_code=400)
