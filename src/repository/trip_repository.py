@@ -5,10 +5,10 @@ class TripRepository:
     def __init__(self):
         self.session = db.session
 
-    def get_all_trips(self):
+    def get_all(self):
         return self.session.query(Trip).all()
     
-    def get_trip_by_id(self,trip_id):
+    def get_by_id(self,trip_id):
         return self.session.query(Trip).get(trip_id)
     
     def add_trip(self, new_trip):

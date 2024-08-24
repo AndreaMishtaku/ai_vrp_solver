@@ -29,7 +29,9 @@ class NodeRepository:
         else:
             return self.session.query(Node).filter_by(name=name,type=NodeType.NODE).first() is not None
 
-    def update_node(self, node):
+    def update_node(self, node, node_dict):
+        for key, value in node_dict.items():
+            setattr(node, key, value)
         self.session.commit()
         return node
 

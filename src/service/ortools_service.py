@@ -164,8 +164,7 @@ class ORToolsService:
             # Save trip to repository
             for index,route in enumerate(result['routes']):
                 depo=next((depo for depo in depos if depo.id == route['route'][0]), None)
-                depo.capacity-=route['load']
-                self.node_repository.update_node(depo)
+                self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
                 trip_demands=[]
                 for r in route['route'][1:-1]:
                     v_node = next((node for node in nodes if node.id == r), None)

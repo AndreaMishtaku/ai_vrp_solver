@@ -30,8 +30,7 @@ class LLMService:
             # Save trip to repository
             for route in result['routes']:
                 depo=self.node_repository.get_node_by_id(route['route'][0])
-                depo.capacity-=route['load']
-                self.node_repository.update_node(depo)
+                self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
                 trip_demands=[]
                 for r in route['route'][1:-1]:
                     v_node = next((node for node in nodes if node['id'] == r), None)
@@ -64,7 +63,6 @@ class LLMService:
 
                 if(depo.capacity<requested_quantity):
                     raise Error(message=f'Not enough quantity in depo',status_code=404)
-
 
             if self.vehicle_repository.check_vehicle_by_plate(plate=dv['plate']) is False:
                 raise Error(message=f'Vehicle {dv['plate']} not found!',status_code=404)
