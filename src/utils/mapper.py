@@ -19,7 +19,7 @@ class Mapper:
             data = {key: Mapper._handle_value(getattr(obj, key)) for key in obj.__dict__.keys() if not key.startswith('_')}
             return data
         else:
-            return obj  # handle non-object types
+            return obj
     
 
     def _handle_value(value):
