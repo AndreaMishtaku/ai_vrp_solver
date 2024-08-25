@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+migrations/
+.vscode/
+*.pyc
+.git/
+.env

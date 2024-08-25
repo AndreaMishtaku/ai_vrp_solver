@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  database:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql # Initialize the database with the init.sql script on startup
+      - vrp_db_data:/var/lib/mysql
+    networks:
+      - my-network
+
+  vrp_app:
+    build: .
+    environment:
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB_NAME: ${MYSQL_DB_NAME}
+      MYSQL_HOST: database
+      MYSQL_PORT: ${MYSQL_PORT}
+      OPENAI_MODEL_NAME: ${OPENAI_MODEL_NAME}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  vrp_db_data:
