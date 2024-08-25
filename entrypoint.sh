@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Wait for 60 seconds to ensure that the database service is fully up and running
-sleep 200
+sleep 180
 # Log
 echo "Application preparing to start" 
 

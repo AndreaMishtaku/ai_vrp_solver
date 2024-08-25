@@ -28,8 +28,8 @@ Your goal is to utilize this information to generate the most efficient and effe
     - **route**: A list integers with nodes id that the vehicle visits in the order they are visited. (strict type list with integers, do not return objects instead)
     - **load**: The load handled for a single route.
     - **distance**: The distance covered through a single route.
-- **total_distance**: The sum of distances covered from all routes. (Given as a numeric value)
-- **total_load**: The sum of loads transported from all routes. (Given as a numeric value)
+- **total_distance**: The sum of distances covered from all routes.
+- **total_load**: The sum of loads transported from all routes.
 
 
 ### Important Notes:

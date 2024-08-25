@@ -1,7 +1,7 @@
 from src.repository import NodeRepository, EdgeRepository, VehicleRepository, TripRepository
 from src.utils import Mapper
 from src.payload import Error
-from src.model import Node
+from src.model import Node, Vehicle
 
 class BasicService:
     def __init__(self):
@@ -22,8 +22,8 @@ class BasicService:
     
 
     def create_node(self,dict):
-        #new_node= Node(**dict)
-        self.node_repository.create_node(dict)
+        new_node= Node(**dict)
+        self.node_repository.create_node(new_node)
         return
 
     def get_node_by_id(self,id):
@@ -49,7 +49,8 @@ class BasicService:
         return
     
     def create_vehicle(self,dict):
-        self.vehicle_repository.add(dict)
+        new_vehicle=Vehicle(**dict)
+        self.vehicle_repository.add(new_vehicle)
         return
     
     def get_vehicle_by_id(self,id):
