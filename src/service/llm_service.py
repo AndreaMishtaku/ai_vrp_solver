@@ -17,16 +17,24 @@ class LLMService:
     def solve(self, request_payload):
         self.check_payload(trip_dict=request_payload)
         try:
-            data = fetch_data(request_payload=request_payload)
+            depos, nodes, vehicles, edges = fetch_data(request_payload=request_payload)
+            location_strings, edge_strings, vehicle_strings = get_formatted_data(depos, nodes, vehicles, edges)
+
+            demand_strings = [
+            f"Demand-> Node: {demand['node']}, Demand: {demand['demand']}"
+            for demand in request_payload['demands']
+            ]
+            
             prompt_inputs={
-                **data,
-                "demands": request_payload['demands'],
+                'locations':location_strings,
+                'edges': edge_strings,
+                'vehicles': vehicle_strings,
+                "demands": demand_strings,
                 "schema": self.solver.parser.get_format_instructions()
             }
 
             result = self.solver.solve(inputs=prompt_inputs)
 
-            nodes=data['nodes']
             # Save trip to repository
             for route in result['routes']:
                 depo=self.node_repository.get_node_by_id(route['route'][0])
@@ -63,7 +71,7 @@ class LLMService:
 
                 if(depo.capacity<requested_quantity):
                     raise Error(message=f'Not enough quantity in depo',status_code=404)
-
+                
             if self.vehicle_repository.check_vehicle_by_plate(plate=dv['plate']) is False:
                 raise Error(message=f'Vehicle {dv['plate']} not found!',status_code=404)
             
@@ -76,22 +84,38 @@ def fetch_data(request_payload):
     vehicle_plates = [depo_vehicle['plate'] for depo_vehicle in request_payload["depo_vehicle"]]
         
     nodes=query_data(table='node', attributes=['name'], valueList=node_names)
-    filtered_nodes = [{'id': node['id'], 'name': node['name'], 'latitude': node['latitude'], 'longitude': node['longitude']} for node in nodes]
     depos=query_data(table='node', attributes=['name'], valueList=depo_names)
-    filtered_depos = [{'id': depo['id'], 'name': depo['name'], 'latitude': depo['latitude'], 'longitude': depo['longitude'], 'capacity':depo['capacity']} for depo in depos]
     vehicles=query_data(table='vehicle', attributes=['plate'], valueList=vehicle_plates)
 
     ids= [node['id'] for node in nodes]+ [depo['id'] for depo in depos]
         
     edges=query_data(table='edge', attributes=['start_node_id', 'end_node_id'], valueList=ids)
-    filtered_edges = [{'start_node_id': edge['start_node_id'], 'end_node_id': edge['end_node_id'], 'distance': edge['distance']} for edge in edges]
         
-    return {
-            "nodes": filtered_nodes,
-            "depos": filtered_depos,
-            "edges": filtered_edges,
-            "vehicles": vehicles
-        }
+    return depos, nodes, vehicles, edges
+
+def get_formatted_data(depos, nodes, vehicles, edges):
+    depo_strings = [
+        f"Depo-> Id: {depo['id']}, Name: {depo['name']}, Location: ({depo['latitude']}, {depo['longitude']}), Capacity: {depo['capacity']}"
+        for depo in depos
+    ]
+    node_strings = [
+        f"Node-> Id: {node['id']}, Name: {node['name']}, Location: ({node['latitude']}, {node['longitude']})"
+        for node in nodes
+    ]
+
+    edge_strings = [
+        f"Edge-> Start Node: {edge['start_node_id']}, End Node: {edge['end_node_id']}, Distance: {edge['distance']}"
+        for edge in edges
+    ]
+
+    vehicle_strings = [
+        f"Vehicle-> Plate: {vehicle['plate']}, Capacity: {vehicle['capacity']}"
+        for vehicle in vehicles
+    ]
+
+    location_strings = "\n".join(node_strings + depo_strings)
+
+    return location_strings, "\n".join(edge_strings), "\n".join(vehicle_strings)
     
 def query_data(table, attributes, valueList):
     value_list_str = ', '.join([f"'{value}'" for value in valueList])

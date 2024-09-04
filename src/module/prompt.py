@@ -6,23 +6,17 @@ Solve this Vehicle Routing Problem (VRP) when a request with demands that is  th
   - **Demand**: The quantity of goods to be delivered to the corresponding node.
 
 The information you need for solving the problem:
-List of nodes:
-{nodes}
- - **Id**: The unique identifier for each node.
-  - **Name**: Descriptive identifier.
-  - **Latitude and longitude**: Coordinates .
-
-List of depos that will supply the node:
-{depos}
-  - **Id**: The unique identifier for the depot, which will be the first and last node in every route.
-  - **Name**: Descriptive identifier of the depot.
+List of locations:
+{locations}
+  - **Id**: The unique identifier for the location
+  - **Name**: Descriptive identifier. (For example name of the city)
   - **Latitude and longitude**: Coordinates.
-  - **Capacity**: The maximum load that can be handled by the depot.
+  - **Capacity**: Only for depot attribute which specifies maximum quantity a depo can handle.
 
 List of edges that keeps the distance between two nodes:
 {edges}
-  - **Start_Node_Id**: The id of the node where the edge begins.
-  - **End_Node_Id**: The id of the node where the edge ends.
+  - **Start Node**: The id of the node where the edge begins.
+  - **End Node **: The id of the node where the edge ends.
   - **Distance**: The distance between  nodes .
 
 List of vehicles that have a specific capacity and a unique identifier:

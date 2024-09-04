@@ -14,12 +14,14 @@ class ORToolsService:
 
     def create_data_model(self, trip_dict, depos, nodes, vehicles):
         """Stores the data for the problem."""
-        depot = next((depo for depo in depos if depo.name ==trip_dict['depo_vehicle'][0]['depo']), None)
-        if depot is None:
-            raise ValueError(f"Depot '{trip_dict['depo_vehicle'][0]['depo']}' not found in the list of all depots.")
+
+        #Case with one depo
+        #depot = next((depo for depo in depos if depo.name ==trip_dict['depo_vehicle'][0]['depo']), None)
+        #if depot is None:
+        #    raise ValueError(f"Depot '{trip_dict['depo_vehicle'][0]['depo']}' not found in the list of all depots.")
         
         demand_nodes = [node for node in nodes if any(d['node'] == node.name and d['demand'] > 0 for d in trip_dict['demands'])]
-        filtered_nodes =  [depot] + demand_nodes
+        filtered_nodes = depos + demand_nodes
 
         data = {}
         
@@ -42,8 +44,8 @@ class ORToolsService:
         data['vehicles_plate'] = []
 
         #Add the case with more than one vehicle and depo
-        #data['starts'] = []
-        #data['ends'] = []
+        data['starts'] = []
+        data['ends'] = []
 
 
         for dv in trip_dict['depo_vehicle']:
@@ -51,8 +53,12 @@ class ORToolsService:
             data['vehicle_capacities'].append(vehicle.capacity)
             data['vehicles_plate'].append(vehicle.plate)
 
+            # Start and end at the depot specific to this vehicle
+            data['starts'].append(node_name_to_filtered_index[dv['depo']])
+            data['ends'].append(node_name_to_filtered_index[dv['depo']])
 
-        data['depot'] =  node_name_to_filtered_index[trip_dict['depo_vehicle'][0]['depo']] 
+        # This was the case with one vehicle
+        #data['depot'] =  node_name_to_filtered_index[trip_dict['depo_vehicle'][0]['depo']] 
         data['num_vehicles'] = len(data['vehicle_capacities'])
 
 
@@ -121,16 +127,16 @@ class ORToolsService:
         data, original_indices = self.create_data_model(trip_dict=trip_dict , depos=depos , nodes=nodes,vehicles=vehicles)
 
         manager = pywrapcp.RoutingIndexManager(
-            len(data["distance_matrix"]), data["num_vehicles"], data["depot"]
+            len(data["distance_matrix"]), data["num_vehicles"],  data["starts"], data["ends"]
         )
 
         routing = pywrapcp.RoutingModel(manager)
         def distance_callback(from_index, to_index):
             """Returns the distance between the two nodes."""
-
             from_node = manager.IndexToNode(from_index)
             to_node = manager.IndexToNode(to_index)
             return data["distance_matrix"][from_node][to_node]
+        
         transit_callback_index = routing.RegisterTransitCallback(distance_callback)
         routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
         def demand_callback(from_index):

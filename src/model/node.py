@@ -16,3 +16,11 @@ class Node(db.Model):
 
     def __repr__(self):
         return f'<Node {self.name}>'
+    
+
+
+    def __str__(self):
+        if self.type == NodeType.NODE:
+            return f'Node-> Id: {self.id}, Name: {self.name}, Location: ({self.latitude}, {self.longitude})\n'
+        else:
+            return f'Depo-> Id: {self.id}, Name: {self.name}, Location: ({self.latitude}, {self.longitude}), Capacity: {self.capacity}\n'
