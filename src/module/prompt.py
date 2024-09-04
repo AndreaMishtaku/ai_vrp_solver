@@ -1,6 +1,7 @@
 prompt_template = """
 
-Solve this Vehicle Routing Problem (VRP) when a request with demands that is  the quantity that needs to be delivered to each node is given as below:
+Solve this Vehicle Routing Problem (VRP) given the following details:
+**Demands**:
 {demands}
   - **Node**: The name of the node where the demand is required.
   - **Demand**: The quantity of goods to be delivered to the corresponding node.
@@ -24,11 +25,15 @@ List of vehicles that have a specific capacity and a unique identifier:
   - **Plate**: The license plate of the vehicle, which serves as its identifier.
   - **Capacity**: The maximum load the vehicle can carry (important for ensuring the vehicle’s route stays within capacity limits).
 
+### Task
+Using the provided data, your objective is to generate the most efficient set of routes for the available vehicles. Each route must:
+- Start and end at a designated depot.
+- Satisfy all node demands.
+- Ensure no vehicle exceeds its capacity.
 
-Using the provided data, your task is to generate the most efficient set of routes for the available vehicles. Each route must start and end at the depot, satisfy all node demands, and ensure that no vehicle exceeds its capacity.
-- **Route Optimization**: Minimize the total distance traveled by all vehicles combined.
-- **Constraints**: Ensure that each vehicle’s load does not exceed its capacity and that all demands are met.
-- **Response**: Ensure that response to be a json with this schema.
+
+### Response
+Ensure that response to be a json with this schema.
     ```
     {schema}
     ```

@@ -15,13 +15,11 @@ class ORToolsService:
     def create_data_model(self, trip_dict, depos, nodes, vehicles):
         """Stores the data for the problem."""
 
-        #Case with one depo
-        #depot = next((depo for depo in depos if depo.name ==trip_dict['depo_vehicle'][0]['depo']), None)
-        #if depot is None:
-        #    raise ValueError(f"Depot '{trip_dict['depo_vehicle'][0]['depo']}' not found in the list of all depots.")
+        depo_names = {dv['depo'] for dv in trip_dict['depo_vehicle']}
+        filtered_depos = [depo for depo in depos if depo.name in depo_names]
         
         demand_nodes = [node for node in nodes if any(d['node'] == node.name and d['demand'] > 0 for d in trip_dict['demands'])]
-        filtered_nodes = depos + demand_nodes
+        filtered_nodes = filtered_depos + demand_nodes
 
         data = {}
         
@@ -42,8 +40,6 @@ class ORToolsService:
         data['demands'] = demands
         data['vehicle_capacities'] = []
         data['vehicles_plate'] = []
-
-        #Add the case with more than one vehicle and depo
         data['starts'] = []
         data['ends'] = []
 
@@ -57,8 +53,7 @@ class ORToolsService:
             data['starts'].append(node_name_to_filtered_index[dv['depo']])
             data['ends'].append(node_name_to_filtered_index[dv['depo']])
 
-        # This was the case with one vehicle
-        #data['depot'] =  node_name_to_filtered_index[trip_dict['depo_vehicle'][0]['depo']] 
+
         data['num_vehicles'] = len(data['vehicle_capacities'])
 
 
