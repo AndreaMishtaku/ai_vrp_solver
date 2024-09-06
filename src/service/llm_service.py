@@ -18,18 +18,12 @@ class LLMService:
         self.check_payload(trip_dict=request_payload)
         try:
             depos, nodes, vehicles, edges = fetch_data(request_payload=request_payload)
-            location_strings, edge_strings, vehicle_strings = get_formatted_data(depos, nodes, vehicles, edges)
-
-            demand_strings = [
-            f"Demand-> Node: {demand['node']}, Demand: {demand['demand']}"
-            for demand in request_payload['demands']
-            ]
+            locations_str, vehicle_depo_str, distances_str = get_formatted_data(depos, nodes, edges, vehicles, request_payload['demands'], request_payload['depo_vehicle'])
             
             prompt_inputs={
-                'locations':location_strings,
-                'edges': edge_strings,
-                'vehicles': vehicle_strings,
-                "demands": demand_strings,
+                'locations':locations_str,
+                'distances': distances_str,
+                'vehicle_depo':  vehicle_depo_str,
                 "schema": self.solver.parser.get_format_instructions()
             }
 
@@ -93,29 +87,69 @@ def fetch_data(request_payload):
         
     return depos, nodes, vehicles, edges
 
-def get_formatted_data(depos, nodes, vehicles, edges):
-    depo_strings = [
-        f"Depo-> Id: {depo['id']}, Name: {depo['name']}, Location: ({depo['latitude']}, {depo['longitude']}), Capacity: {depo['capacity']}"
-        for depo in depos
-    ]
-    node_strings = [
-        f"Node-> Id: {node['id']}, Name: {node['name']}, Location: ({node['latitude']}, {node['longitude']})"
-        for node in nodes
+def get_formatted_data(depos, nodes, edges, vehicles, demands, vehicle_depo):
+    locations=depos+nodes
+    location_index_map = {location['id']: idx for idx, location in enumerate(locations)}
+    n = len(locations)
+
+    # Initializing the matrix
+    distance_matrix = [[0 if i == j else float('inf') for j in range(n)] for i in range(n)]
+
+    # Fill the distance matrix with the given edges
+    for edge in edges:
+        start_id = edge['start_node_id']
+        end_id = edge['end_node_id']
+        distance = edge['distance']
+        # Find the indices of the start and end locations
+        start_idx = location_index_map[start_id]
+        end_idx = location_index_map[end_id]
+        distance_matrix[start_idx][end_idx] = distance
+
+
+    # Provide location info
+    location_strings = [
+        f"Depo {location['id']}: {location['name']} with capacity {location['capacity']}\n"
+        if location['type'] == 'DEPO' else 
+        f"Node {location['id']}: {location['name']} with demand: {next((demand['demand'] for demand in demands if demand['node'] == location['name']), None)}\n"
+        for location in locations
     ]
 
-    edge_strings = [
-        f"Edge-> Start Node: {edge['start_node_id']}, End Node: {edge['end_node_id']}, Distance: {edge['distance']}"
-        for edge in edges
-    ]
+    locations_str = ''.join(location_strings)
 
-    vehicle_strings = [
-        f"Vehicle-> Plate: {vehicle['plate']}, Capacity: {vehicle['capacity']}"
-        for vehicle in vehicles
-    ]
+    distance_strings = []
+    processed_pairs = []  # List to keep track of processed pairs
+    
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                start_id = locations[i]['id']
+                end_id = locations[j]['id']
+                
+                
+                pair = (start_id, end_id)
+                reverse_pair = (end_id, start_id)
+                
+                if pair in processed_pairs or reverse_pair in processed_pairs:
+                    continue
+                
+                distance = distance_matrix[i][j]
+                reverse_distance = distance_matrix[j][i]
+                
+                if distance != float('inf') and reverse_distance != float('inf'):
+                    distance_strings.append(f"{start_id} to {end_id}: {distance} and {end_id} to {start_id}: {reverse_distance}, ")
+                
+                processed_pairs.append(pair)
+    
+    distances_str = ', '.join(distance_strings)
 
-    location_strings = "\n".join(node_strings + depo_strings)
+    vehicle_depo_str='Depo | Vehicle\n'
+    for vd in vehicle_depo:
+        vehicle = next((v for v in vehicles if v['plate'] == vd['plate']), None)
+        vehicle_depo_str+= f"{vd['depo']} | Vehicle-> Plate: {vehicle['plate']}, Capacity: {vehicle['capacity']}" 
 
-    return location_strings, "\n".join(edge_strings), "\n".join(vehicle_strings)
+
+
+    return locations_str, vehicle_depo_str, distances_str
     
 def query_data(table, attributes, valueList):
     value_list_str = ', '.join([f"'{value}'" for value in valueList])

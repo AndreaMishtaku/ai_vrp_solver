@@ -17,15 +17,18 @@ class ORToolsService:
 
         depo_names = {dv['depo'] for dv in trip_dict['depo_vehicle']}
         filtered_depos = [depo for depo in depos if depo.name in depo_names]
-        
+
         demand_nodes = [node for node in nodes if any(d['node'] == node.name and d['demand'] > 0 for d in trip_dict['demands'])]
         filtered_nodes = filtered_depos + demand_nodes
+
 
         data = {}
         
         node_name_to_filtered_index = {node.name: i for i, node in enumerate(filtered_nodes)}
         original_index_to_filtered_index = {i: node_name_to_filtered_index[node.name] for i, node in enumerate(depos + nodes) if node.name in node_name_to_filtered_index}
             
+
+        
         # Store original node indices for reference in solution
         original_indices = [node.id for node in filtered_nodes]
 

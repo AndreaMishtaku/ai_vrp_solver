@@ -27,7 +27,7 @@ class LLMSolver:
         self.parser=JsonOutputParser(pydantic_object=VRPResponse)
         self.prompt = PromptTemplate(
             system_message=system_message,
-            input_variables=[ "nodes", "depos", "edges", "vehicles", "demands", "schema"],
+            input_variables=['locations', 'distances', 'vehicle_depo', "schema"],
             template=prompt_template
         )
         
