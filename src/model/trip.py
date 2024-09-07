@@ -7,8 +7,8 @@ class Trip(db.Model):
     total_distance = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime ,nullable=False)
     generated_by = db.Column(db.String(20), nullable=False)
-    llm_model_name= db.Column(db.String(20))
-    reference_id = db.Column(db.String(80))
+    llm_model_name = db.Column(db.String(20))
+    reference = db.Column(db.String(80))
 
     
     demands = relationship("TripDemands", back_populates="trip", lazy='joined')

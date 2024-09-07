@@ -1,4 +1,5 @@
 from flask_restx import Namespace, Resource, fields
+from flask import request
 from src.service import ORToolsService
 
 ortools_ns = Namespace('ortools', description='Vehicle routing problem (Google)')
@@ -23,6 +24,10 @@ trip_model=ortools_ns.model('Trip',{
 @ortools_ns.route('/vrp')
 class ORToolsController(Resource):
     @ortools_ns.expect(trip_model)
+    @ortools_ns.doc(params={
+        'reference': 'An optional reference'
+    })
     def post(self):
+        reference = request.args.get('reference')
         trip_dict = ortools_ns.payload 
-        return ortools_service.routing_model(trip_dict), 200
+        return ortools_service.routing_model(trip_dict,reference), 200

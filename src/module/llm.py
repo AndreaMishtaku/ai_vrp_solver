@@ -8,9 +8,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from .system_message import system_message
 from .prompt import prompt_template
 from src.payload import Error
-
-anthopic_model = ChatAnthropic(model_name = os.getenv("ANTHROPIC_MODEL_NAME"))
-open_ai_model = ChatOpenAI(model_name= os.getenv("OPENAI_MODEL_NAME"))
+from src.enums.llm_model_name import LLM_ModelName
 
 class Route(BaseModel):
     plate: Optional[str] = Field(description="Plate of the vehicle")
@@ -24,10 +22,8 @@ class VRPResponse(BaseModel):
     total_load: Optional[int] = Field(description="Total load transported by all routes")
 
 class LLMSolver:
-    def __init__(self):
-        model='openai'
-        self.model =  open_ai_model if model=="openai" else anthopic_model if model=="claude" else None
-        self.model_name = os.getenv("OPENAI_MODEL_NAME") if model=="openai" else anthopic_model if model=="claude" else None
+    def __init__(self, model):
+        self.model = self.get_model(model)
         self.parser= JsonOutputParser(pydantic_object=VRPResponse)
         self.prompt = PromptTemplate(
             system_message=system_message,
@@ -36,7 +32,19 @@ class LLMSolver:
         )
         
         self.chain = self.prompt | self.model | self.parser
-
+        
+    def get_model(self, model):
+        if model == LLM_ModelName.GPT4:
+            return  ChatOpenAI(model_name = "gpt-4o")
+        elif model == LLM_ModelName.GPT3:
+            return  ChatOpenAI(model_name = "gpt-3.5-turbo")
+        elif model == LLM_ModelName.Claude3:
+            return  ChatAnthropic(model_name = "claude-3-sonnet-20240229")
+        elif model == LLM_ModelName.Claude3_5:
+            return ChatAnthropic(model_name = "claude-3-5-sonnet-20240620")
+        else:
+            return None
+    
     def solve(self, inputs):
         if self.model is None:
             raise Error(message='Model not specified')

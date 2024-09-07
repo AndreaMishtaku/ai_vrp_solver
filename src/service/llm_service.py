@@ -1,10 +1,11 @@
 from src.module.llm import LLMSolver
 from src.repository import TripRepository, NodeRepository, VehicleRepository
-from src.model import Trip,TripDemands
+from src.model import Trip, TripDemands, TripRoute, Visit
 from src.config.database import db
 from sqlalchemy import text
 from src.payload import Error
 from datetime import datetime
+from src.enums.provider import Provider
 
 
 class LLMService:
@@ -12,10 +13,10 @@ class LLMService:
         self.node_repository=NodeRepository()
         self.vehicle_repository=VehicleRepository()
         self.trip_repository=TripRepository()
-        self.solver=LLMSolver()
 
-    def solve(self, request_payload):
+    def solve(self, request_payload, model, reference=None):
         self.check_payload(trip_dict=request_payload)
+        solver=LLMSolver(model)
         try:
             depos, nodes, vehicles, edges = fetch_data(request_payload=request_payload)
             locations_str, vehicle_depo_str, distances_str = get_formatted_data(depos, nodes, edges, vehicles, request_payload['demands'], request_payload['depo_vehicle'])
@@ -24,23 +25,33 @@ class LLMService:
                 'locations':locations_str,
                 'distances': distances_str,
                 'vehicle_depo':  vehicle_depo_str,
-                "schema": self.solver.parser.get_format_instructions()
+                "schema": solver.parser.get_format_instructions()
             }
 
-            result = self.solver.solve(inputs=prompt_inputs)
+            result = solver.solve(inputs=prompt_inputs)
 
-            # Save trip to repository
+            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by=Provider.LLM.value, llm_model_name=model.value ,reference=reference)
             for route in result['routes']:
-                depo=self.node_repository.get_node_by_id(route['route'][0])
+                depo=next((depo for depo in depos if depo.id == route['route'][0]), None)
                 self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
-                trip_demands=[]
-                for r in route['route'][1:-1]:
-                    v_node = next((node for node in nodes if node['id'] == r), None)
-                    demand = next((demand['demand'] for demand in request_payload['demands'] if demand["node"] == v_node['name'] ), None)
-                    td=TripDemands(node_id=v_node['id'], demand=demand)
-                    trip_demands.append(td) 
-                trip = Trip(vehicle_id=1 ,depo_id=route['route'][0], total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(),demands=trip_demands)
-                self.trip_repository.add_trip(trip)
+
+                #finding vehicle
+                vehicle = next((v for v in vehicles if v.plate == route['plate']), None)
+                # initialize trip route
+                trip_route = TripRoute(vehicle_id=vehicle.id, depo_id=route['route'][0], load=route['load'],distance=route['distance'])
+                for idx,r in enumerate(route['route']):
+                    visit=Visit(trip_route_id=trip_route.id, node_id=r)
+                    trip_route.add_visit(visit)
+                    # saving demands
+                    if not (idx==0 or idx==len(route['route'])-1):
+                        v_node = next((node for node in nodes if node.id == r), None)
+                        demand = next((demand['demand'] for demand in request_payload['demands'] if demand["node"] == v_node.name ), None)
+                        td=TripDemands(node_id=v_node.id, demand=demand)
+                        trip.add_demand(td)
+                trip.add_route(trip_route)
+
+            # save trip to repository
+            self.trip_repository.add_trip(trip)
             return result
         except Exception as e:
             raise Error(message=f'Solution not found! {e}',status_code=400)

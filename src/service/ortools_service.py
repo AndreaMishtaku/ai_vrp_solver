@@ -4,6 +4,7 @@ from src.payload import Error
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from datetime import datetime
+from src.enums.provider import Provider
 
 class ORToolsService:
     def __init__(self):
@@ -21,13 +22,10 @@ class ORToolsService:
         demand_nodes = [node for node in nodes if any(d['node'] == node.name and d['demand'] > 0 for d in trip_dict['demands'])]
         filtered_nodes = filtered_depos + demand_nodes
 
-
         data = {}
         
         node_name_to_filtered_index = {node.name: i for i, node in enumerate(filtered_nodes)}
         original_index_to_filtered_index = {i: node_name_to_filtered_index[node.name] for i, node in enumerate(depos + nodes) if node.name in node_name_to_filtered_index}
-            
-
         
         # Store original node indices for reference in solution
         original_indices = [node.id for node in filtered_nodes]
@@ -58,7 +56,6 @@ class ORToolsService:
 
 
         data['num_vehicles'] = len(data['vehicle_capacities'])
-
 
         # Create the reduced distance matrix
         num_filtered_locations = len(filtered_nodes)
@@ -116,7 +113,7 @@ class ORToolsService:
         return summary
 
 
-    def routing_model(self, trip_dict, reference_id=None):
+    def routing_model(self, trip_dict, reference=None):
         """Solve the Capacity VRP problem."""
         self.check_payload(trip_dict)
         depos, nodes, vehicles = self.fetch_data(trip_dict=trip_dict)
@@ -166,7 +163,7 @@ class ORToolsService:
             result=self.get_solution(data, manager, routing, solution, original_indices)
 
             # initialize trip
-            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by='ortools', reference_id=reference_id)
+            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by=Provider.ORTOOLS.value, reference=reference)
             for route in result['routes']:
                 depo=next((depo for depo in depos if depo.id == route['route'][0]), None)
                 self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
