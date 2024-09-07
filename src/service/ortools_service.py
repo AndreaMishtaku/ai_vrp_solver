@@ -165,7 +165,6 @@ class ORToolsService:
         if solution:
             result=self.get_solution(data, manager, routing, solution, original_indices)
 
-            # Save trip to repository
             # initialize trip
             trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by='ortools', reference_id=reference_id)
             for route in result['routes']:
@@ -176,17 +175,18 @@ class ORToolsService:
                 vehicle = next((v for v in vehicles if v.plate == route['plate']), None)
                 # initialize trip route
                 trip_route = TripRoute(vehicle_id=vehicle.id, depo_id=route['route'][0], load=route['load'],distance=route['distance'])
-                for idx,r in enumerate(route['route'][1:-1]):
+                for idx,r in enumerate(route['route']):
                     visit=Visit(trip_route_id=trip_route.id, node_id=r)
                     trip_route.add_visit(visit)
-                    # Saving demands
-                    if idx==0 or idx==len(route['route'])-1:
+                    # saving demands
+                    if not (idx==0 or idx==len(route['route'])-1):
                         v_node = next((node for node in nodes if node.id == r), None)
                         demand = next((demand['demand'] for demand in trip_dict['demands'] if demand["node"] == v_node.name ), None)
                         td=TripDemands(node_id=v_node.id, demand=demand)
                         trip.add_demand(td)
                 trip.add_route(trip_route)
-            
+
+            # save trip to repository
             self.trip_repository.add_trip(trip)
 
             return result 
