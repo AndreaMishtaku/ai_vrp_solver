@@ -22,7 +22,7 @@ trip_model=llm_ns.model('Trip',{
     'depo_vehicle':fields.List(fields.Nested(depo_vehicle_model),required=True),
 })
 
-@llm_ns.route('/<string:model_name>/vrp', defaults={'reference': None})
+@llm_ns.route('/<string:model_name>/vrp')
 class LLMController(Resource):
     @llm_ns.expect(trip_model)
     @llm_ns.doc(params={

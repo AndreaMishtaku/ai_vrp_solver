@@ -14,7 +14,7 @@ class LLMService:
         self.vehicle_repository=VehicleRepository()
         self.trip_repository=TripRepository()
 
-    def solve(self, request_payload, model, reference=None):
+    def solve(self, request_payload, model, reference = None):
         self.check_payload(trip_dict=request_payload)
         solver=LLMSolver(model)
         try:
