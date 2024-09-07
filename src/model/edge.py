@@ -6,8 +6,8 @@ class Edge(db.Model):
     start_node_id= db.Column(db.Integer,db.ForeignKey('node.id'),nullable=False)
     end_node_id = db.Column(db.Integer,db.ForeignKey('node.id'),nullable=False)
     distance = db.Column(db.Integer, nullable=False)
-
-    start_node = relationship("Node", foreign_keys=[start_node_id], back_populates="routes")
+    
+    start_node = relationship("Node", foreign_keys=[start_node_id])
     end_node = relationship("Node", foreign_keys=[end_node_id])
 
     def __repr__(self):

@@ -3,15 +3,28 @@ from sqlalchemy.orm import relationship
 
 class Trip(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
-    depo_id = db.Column(db.Integer, db.ForeignKey('node.id'))
     total_load = db.Column(db.Integer, nullable=False)
     total_distance = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime ,nullable=False)
+    generated_by = db.Column(db.String(20), nullable=False)
+    llm_model_name= db.Column(db.String(20))
+    reference_id = db.Column(db.String(80))
 
-    vehicle = relationship("Vehicle", foreign_keys=[vehicle_id], back_populates="trips")
-    depo = relationship("Node", foreign_keys=[depo_id], back_populates="trips")
-    demands = relationship("TripDemands", foreign_keys="[TripDemands.trip_id]", lazy='joined')
+    
+    demands = relationship("TripDemands", back_populates="trip", lazy='joined')
+    routes = relationship("TripRoute",  back_populates="trip", lazy='joined')
+
+    def add_demand(self, demand):
+        """
+        Add a demand to the trip.
+        """
+        self.demands.append(demand)
+
+    def add_route(self, route):
+        """
+        Add a route to the trip.
+        """
+        self.routes.append(route)
 
     def __repr__(self):
         return f'<Trip {self.id}>'

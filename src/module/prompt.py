@@ -34,6 +34,7 @@ Using the provided data, your objective is to generate the most efficient set of
 - Take the shortest path possible by taking into consideration vehicle capacity and node demand.
 
 ### Response
+Dont give any extra explanation about the problem, answer directly with json output.
 Ensure that response to be a json with this schema.
     ```
     {schema}

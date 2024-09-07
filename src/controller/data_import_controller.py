@@ -14,8 +14,7 @@ class DataImportController(Resource):
     def post(self):
         uploaded_file = request.files['locations']
 
-
-        data=read_excel_file(uploaded_file,['Name','Latitude','Longitude','Type','Capacity'])
+        data=read_excel_file(uploaded_file,['Name','Latitude','Longitude','Type','Capacity','Time'])
         if uploaded_file.filename == '':
             return {'message': 'No file selected for uploading'}, 400
         

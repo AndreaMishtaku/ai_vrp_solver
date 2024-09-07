@@ -13,7 +13,7 @@ class ImportService:
     def add_node(self, data):
         try:
             for location in data:
-                new_node = Node(name=location[0], latitude=location[1], longitude= location[2],type=location[3],capacity=location[4])
+                new_node = Node(name=location[0], latitude=location[1], longitude= location[2],type=location[3],capacity=location[4], time=location[5])
                 self.node_repository.create_node(new_node)
 
             nodes_list=self.node_repository.get_all_nodes()

@@ -1,12 +1,16 @@
 import os
 from typing import List, Optional
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
 from .system_message import system_message
 from .prompt import prompt_template
+from src.payload import Error
 
+anthopic_model = ChatAnthropic(model_name = os.getenv("ANTHROPIC_MODEL_NAME"))
+open_ai_model = ChatOpenAI(model_name= os.getenv("OPENAI_MODEL_NAME"))
 
 class Route(BaseModel):
     plate: Optional[str] = Field(description="Plate of the vehicle")
@@ -21,10 +25,10 @@ class VRPResponse(BaseModel):
 
 class LLMSolver:
     def __init__(self):
-        # TODO To be configurable if will be used OPEN AI or Claude
-        # self.chat = ChatAnthropic(temperature=0, model_name=os.getenv("ANTHROPIC_MODEL_NAME"))
-        self.model =ChatOpenAI(model_name=os.getenv("OPENAI_MODEL_NAME"))
-        self.parser=JsonOutputParser(pydantic_object=VRPResponse)
+        model='openai'
+        self.model =  open_ai_model if model=="openai" else anthopic_model if model=="claude" else None
+        self.model_name = os.getenv("OPENAI_MODEL_NAME") if model=="openai" else anthopic_model if model=="claude" else None
+        self.parser= JsonOutputParser(pydantic_object=VRPResponse)
         self.prompt = PromptTemplate(
             system_message=system_message,
             input_variables=['locations', 'distances', 'vehicle_depo', "schema"],
@@ -34,4 +38,6 @@ class LLMSolver:
         self.chain = self.prompt | self.model | self.parser
 
     def solve(self, inputs):
+        if self.model is None:
+            raise Error(message='Model not specified')
         return self.chain.invoke(inputs)
