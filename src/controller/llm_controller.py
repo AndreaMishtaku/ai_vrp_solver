@@ -26,7 +26,7 @@ trip_model=llm_ns.model('Trip',{
 class LLMController(Resource):
     @llm_ns.expect(trip_model)
     @llm_ns.doc(params={
-        'model_name': 'The model name to use (e.g., gpt-4o, gpt-3.5, claude-3-sonnet, claude-3-sonnet)',
+        'model_name': 'The model name to use (e.g., gpt-4o, gpt-3.5, claude-3-sonnet, claude-3.5-sonnet)',
         'reference': 'An optional reference'
     })
     def post(self, model_name):
