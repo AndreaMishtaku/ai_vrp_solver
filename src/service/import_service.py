@@ -25,7 +25,7 @@ class ImportService:
                 for end_node in all_nodes:
                     if start_node.id != end_node.id:
                         distance = self._calculate_distance(start_node, end_node)
-                        self.edge_repository.create_edge(start_node_id=start_node.id, end_node_id=end_node.id, distance=distance, time=distance/60)
+                        self.edge_repository.create_edge(start_node_id=start_node.id, end_node_id=end_node.id, distance=distance, time=int(((distance/80)*60)))
 
             return Success(status_code=200,message="Database updated successfully.").to_dict()
         except Exception as e:
