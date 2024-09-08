@@ -45,7 +45,7 @@ class Trip(db.Model):
             "routes": routes,
             "demands": demands,
             "generated_by": self.generated_by,
-            "reference_id": self.reference_id,
+            "reference": self.reference,
             "llm_model_name": self.llm_model_name
         }
 
