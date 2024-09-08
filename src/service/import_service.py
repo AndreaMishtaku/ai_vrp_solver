@@ -13,7 +13,7 @@ class ImportService:
     def add_node(self, data):
         try:
             for location in data:
-                new_node = Node(name=location[0], latitude=location[1], longitude= location[2],type=location[3],capacity=location[4], time=location[5])
+                new_node = Node(name=location[0], latitude=location[1], longitude= location[2],type=location[3],capacity=location[4], time_window=location[5])
                 self.node_repository.create_node(new_node)
 
             nodes_list=self.node_repository.get_all_nodes()
@@ -25,7 +25,7 @@ class ImportService:
                 for end_node in all_nodes:
                     if start_node.id != end_node.id:
                         distance = self._calculate_distance(start_node, end_node)
-                        self.edge_repository.create_edge(start_node_id=start_node.id, end_node_id=end_node.id, distance=distance)
+                        self.edge_repository.create_edge(start_node_id=start_node.id, end_node_id=end_node.id, distance=distance, time=distance/60)
 
             return Success(status_code=200,message="Database updated successfully.").to_dict()
         except Exception as e:

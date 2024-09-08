@@ -9,7 +9,7 @@ class Node(db.Model):
     longitude = db.Column(db.Float, nullable=False)
     type = db.Column(db.Enum(NodeType), default='NODE', nullable=False)
     capacity = db.Column(db.Float,nullable=True)
-    time = db.Column(db.String(80), nullable=False)
+    time_window = db.Column(db.String(80), nullable=False)
 
     def __repr__(self):
         return f'<Node {self.name}>'

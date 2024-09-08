@@ -7,9 +7,9 @@ class Trip(db.Model):
     total_distance = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime ,nullable=False)
     generated_by = db.Column(db.String(20), nullable=False)
+    generated_for = db.Column(db.Float, nullable=False)
     llm_model_name = db.Column(db.String(20))
     reference = db.Column(db.String(80))
-
     
     demands = relationship("TripDemands", back_populates="trip", lazy='joined')
     routes = relationship("TripRoute",  back_populates="trip", lazy='joined')
@@ -44,6 +44,7 @@ class Trip(db.Model):
             "total_load": self.total_load,
             "routes": routes,
             "demands": demands,
+            "generated_for": self.generated_for,
             "generated_by": self.generated_by,
             "reference": self.reference,
             "llm_model_name": self.llm_model_name

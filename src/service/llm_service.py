@@ -6,6 +6,7 @@ from sqlalchemy import text
 from src.payload import Error
 from datetime import datetime
 from src.enums.provider import Provider
+from time import time
 
 
 class LLMService:
@@ -19,6 +20,8 @@ class LLMService:
         solver=LLMSolver(model)
         try:
             depos, nodes, vehicles, edges = fetch_data(request_payload=request_payload)
+
+            start_time= time()
             locations_str, vehicle_depo_str, distances_str = get_formatted_data(depos, nodes, edges, vehicles, request_payload['demands'], request_payload['depo_vehicle'])
             
             prompt_inputs={
@@ -30,12 +33,17 @@ class LLMService:
 
             result = solver.solve(inputs=prompt_inputs)
 
-            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by=Provider.LLM.value, llm_model_name=model.value ,reference=reference)
+            end_time = time()
+
+            # calculating time needed for solving problem
+            elapsed_time =round(end_time - start_time, 3) 
+
+            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_for=elapsed_time, generated_by=Provider.LLM.value, llm_model_name=model.value ,reference=reference)
             for route in result['routes']:
                 depo=self.node_repository.get_node_by_id(route['route'][0])
                 self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
 
-                #finding vehicle
+                # finding vehicle
                 vehicle = next((v for v in vehicles if v.plate == route['plate']), None)
                 # initialize trip route
                 trip_route = TripRoute(vehicle_id=vehicle.id, depo_id=route['route'][0], load=route['load'],distance=route['distance'])

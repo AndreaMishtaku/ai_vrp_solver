@@ -5,6 +5,7 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from datetime import datetime
 from src.enums.provider import Provider
+from time import time
 
 class ORToolsService:
     def __init__(self):
@@ -119,6 +120,7 @@ class ORToolsService:
         depos, nodes, vehicles = self.fetch_data(trip_dict=trip_dict)
 
         # Instantiate the data problem.
+        start_time = time()
         data, original_indices = self.create_data_model(trip_dict=trip_dict , depos=depos , nodes=nodes,vehicles=vehicles)
 
         manager = pywrapcp.RoutingIndexManager(
@@ -160,10 +162,14 @@ class ORToolsService:
         solution = routing.SolveWithParameters(search_parameters)
 
         if solution:
+            # getting results
+            end_time = time()
+            elapsed_time =round(end_time - start_time, 3) 
+
             result=self.get_solution(data, manager, routing, solution, original_indices)
 
             # initialize trip
-            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by=Provider.ORTOOLS.value, reference=reference)
+            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_for=elapsed_time, generated_by=Provider.ORTOOLS.value, reference=reference)
             for route in result['routes']:
                 depo=next((depo for depo in depos if depo.id == route['route'][0]), None)
                 self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
