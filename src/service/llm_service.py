@@ -32,7 +32,7 @@ class LLMService:
 
             trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'] , date=datetime.now(), generated_by=Provider.LLM.value, llm_model_name=model.value ,reference=reference)
             for route in result['routes']:
-                depo=next((depo for depo in depos if depo.id == route['route'][0]), None)
+                depo=self.node_repository.get_node_by_id(route['route'][0])
                 self.node_repository.update_node(depo,{'capacity':depo.capacity-route['load']})
 
                 #finding vehicle
@@ -44,7 +44,7 @@ class LLMService:
                     trip_route.add_visit(visit)
                     # saving demands
                     if not (idx==0 or idx==len(route['route'])-1):
-                        v_node = next((node for node in nodes if node.id == r), None)
+                        v_node = self.node_repository.get_node_by_id(r)
                         demand = next((demand['demand'] for demand in request_payload['demands'] if demand["node"] == v_node.name ), None)
                         td=TripDemands(node_id=v_node.id, demand=demand)
                         trip.add_demand(td)
