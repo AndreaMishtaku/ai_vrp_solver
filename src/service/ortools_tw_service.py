@@ -88,32 +88,38 @@ class ORToolsTWService:
         'total_load': 0
         }
 
+        time_dimension = routing.GetDimensionOrDie("Time")
+
         for vehicle_id in range(data['num_vehicles']):
             index = routing.Start(vehicle_id)
             route = []
             route_time = 0
             route_load = 0
+    
             while not routing.IsEnd(index):
+                time_var = time_dimension.CumulVar(index)
+                index = solution.Value(routing.NextVar(index))
                 node_index = manager.IndexToNode(index)
                 original_node_index = original_indices[node_index]  
                 route_load += data['demands'][node_index]
                 route.append(original_node_index)  
-                previous_index = index
-                index = solution.Value(routing.NextVar(index))
-                route_time += routing.GetArcCostForVehicle(previous_index, index, vehicle_id)
+
+            time_var = time_dimension.CumulVar(index)
+            route_time=solution.Min(time_var)
 
             node_index = manager.IndexToNode(index)
             original_node_index = original_indices[node_index]  
-            route.append(original_node_index)  
+            route.append(original_node_index)
+
 
             if route_load > 0: 
                 summary['routes'].append({
                 'plate': data['vehicles_plate'][vehicle_id],
                 'route': route,
                 'load': route_load,
-                'time': route_time
+                'time': round(route_time, 3)
                 })
-                summary['total_distance'] += route_time
+                summary['total_time'] += route_time
                 summary['total_load'] += route_load
 
         return summary
@@ -185,27 +191,17 @@ class ORToolsTWService:
             index = manager.NodeToIndex(location_idx)
             time_dimension.CumulVar(index).SetRange(time_window[0], time_window[1])
     
-        # TODO
-        #for vehicle_id in range(data['num_vehicles']):
-        #    for depo in data['starts']:
-        #        index = routing.Start(vehicle_id)
-        #        time_dimension.CumulVar(index).SetRange(
-        #            data["time_windows"][depot_idx][0], data["time_windows"][depot_idx][1]
-        #        )
-        #    start_index = routing.Start(vehicle_id)
-
+        for vehicle_id in range(data['num_vehicles']):
+            index = routing.Start(vehicle_id)
+            time_dimension.CumulVar(index).SetRange(
+                data["time_windows"][data['starts'][vehicle_id]][0], data["time_windows"][data['starts'][vehicle_id]][1]
+            )
 
         for i in range(data["num_vehicles"]):
             routing.AddVariableMinimizedByFinalizer(
             time_dimension.CumulVar(routing.Start(i))
             )
             routing.AddVariableMinimizedByFinalizer(time_dimension.CumulVar(routing.End(i)))
-
-        for location_idx, time_window in enumerate(data["time_windows"]):
-            if location_idx == data["depot"]:
-                continue
-            index = manager.NodeToIndex(location_idx)
-            time_dimension.CumulVar(index).SetRange(time_window[0], time_window[1])
 
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (
@@ -217,31 +213,6 @@ class ORToolsTWService:
 
         if solution:
             result = self.get_solution(data, manager, routing, solution, original_indices)
-
-            # initialize trip
-            trip = Trip(total_load=result['total_load'], total_distance=result['total_distance'], date=datetime.now(), generated_by=Provider.ORTOOLS.value, reference=reference)
-            for route in result['routes']:
-                depo = next((depo for depo in depos if depo.id == route['route'][0]), None)
-                self.node_repository.update_node(depo, {'capacity': depo.capacity - route['load']})
-
-                # Finding vehicle
-                vehicle = next((v for v in vehicles if v.plate == route['plate']), None)
-                # initialize trip route
-                trip_route = TripRoute(vehicle_id=vehicle.id, depo_id=route['route'][0], load=route['load'], distance=route['distance'])
-                for idx, r in enumerate(route['route']):
-                    visit = Visit(trip_route_id=trip_route.id, node_id=r)
-                    trip_route.add_visit(visit)
-                    # saving demands
-                    if not (idx == 0 or idx == len(route['route']) - 1):
-                        v_node = next((node for node in nodes if node.id == r), None)
-                        demand = next((demand['demand'] for demand in trip_dict['demands'] if demand["node"] == v_node.name), None)
-                        td = TripDemands(node_id=v_node.id, demand=demand)
-                        trip.add_demand(td)
-            trip.add_route(trip_route)
-
-            # save trip to repository
-            self.trip_repository.add_trip(trip)
-
             return result
         else:
             raise Error(message=f'No solution found!', status_code=400)
