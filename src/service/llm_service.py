@@ -25,22 +25,12 @@ class LLMService:
             locations_str, vehicle_depo_str, distances_str = get_formatted_data(depos, nodes, edges, vehicles, request_payload['demands'], request_payload['depo_vehicle'])
             
             prompt_inputs={
+                "schema": solver.parser.get_format_instructions(),
                 'locations':locations_str,
-                'distance_matrix': [[0, 39, 156, 165, 88, 125, 132, 102],
-                                    [39, 0, 173, 187, 111, 143, 147, 116],
-                                    [156, 173, 0, 25, 70, 31, 27, 57],
-                                    [165, 187, 25, 0, 77, 46, 47, 73],
-                                    [88, 111, 70, 77, 0, 40, 49, 28],
-                                    [125, 143, 31, 46, 40, 0, 12, 28],
-                                    [132, 147, 27, 47, 49, 12, 0, 31],
-                                    [102, 116, 57, 73, 28, 28, 31, 0]],
-                'original_index' : [1, 3, 55, 56, 59, 65, 66, 79],
                 'distances': distances_str,
-                'vehicle_depo':  vehicle_depo_str,
-                "schema": solver.parser.get_format_instructions()
+                'vehicle_depo':  vehicle_depo_str
             }
 
-            print(solver.prompt)
             result = solver.solve(inputs=prompt_inputs)
 
             end_time = time()

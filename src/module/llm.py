@@ -30,9 +30,9 @@ class LLMSolver:
         
     def get_model(self, model):
         if model == LLM_ModelName.GPT4:
-            return  ChatOpenAI(model_name = "gpt-4o",temperature=0)
+            return  ChatOpenAI(model_name = "gpt-4o",temperature=0.0)
         elif model == LLM_ModelName.GPT3:
-            return  ChatOpenAI(model_name = "gpt-3.5-turbo",temperature=0)
+            return  ChatOpenAI(model_name = "gpt-3.5-turbo",temperature=0.0)
         elif model == LLM_ModelName.Claude3:
             return  ChatAnthropic(model_name = "claude-3-sonnet-20240229")
         elif model == LLM_ModelName.Claude3_5:
