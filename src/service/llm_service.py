@@ -24,6 +24,11 @@ class LLMService:
             start_time= time()
             locations_str, vehicle_depo_str, distances_str = get_formatted_data(depos, nodes, edges, vehicles, request_payload['demands'], request_payload['depo_vehicle'])
             
+
+
+            print(locations_str)
+            print(distances_str)
+            print(vehicle_depo_str)
             prompt_inputs={
                 "schema": solver.parser.get_format_instructions(),
                 'locations':locations_str,
@@ -127,9 +132,9 @@ def get_formatted_data(depos, nodes, edges, vehicles, demands, vehicle_depo):
 
     # Provide location info
     location_strings = [
-        f"Depo with id {location['id']}: {location['name']} with capacity {location['capacity']}\n"
+        f"Depo id {location['id']}: {location['name']} with capacity {location['capacity']}\n"
         if location['type'] == 'DEPO' else 
-        f"Node with id {location['id']}: {location['name']} with demand: {next((demand['demand'] for demand in demands if demand['node'] == location['name']), None)}\n"
+        f"Node id {location['id']}: {location['name']} with demand: {next((demand['demand'] for demand in demands if demand['node'] == location['name']), None)}\n"
         for location in locations
     ]
 
@@ -152,19 +157,19 @@ def get_formatted_data(depos, nodes, edges, vehicles, demands, vehicle_depo):
                     continue
                 
                 distance = distance_matrix[i][j]
-                reverse_distance = distance_matrix[j][i]
                 
-                if distance != float('inf') and reverse_distance != float('inf'):
-                    distance_strings.append(f"from id {start_id} to id {end_id}: {distance} km and from id {end_id} to  id{start_id}: {reverse_distance} km ")
+                if distance != float('inf'):
+                    distance_strings.append(f"{start_id} and {end_id}: {distance} km")
                 
                 processed_pairs.append(pair)
     
     distances_str = '\n'.join(distance_strings)
 
-    vehicle_depo_str='Depo | Vehicle\n'
+    vehicle_depo_str=''
     for vd in vehicle_depo:
         vehicle = next((v for v in vehicles if v['plate'] == vd['plate']), None)
-        vehicle_depo_str+= f"{vd['depo']} | Vehicle-> Plate: {vehicle['plate']}, Capacity: {vehicle['capacity']}" 
+        depo = next((d for d in depos if d['name'] == vd['depo']), None)
+        vehicle_depo_str+= f"Depo id {depo['id']} with vehicle : plate: {vehicle['plate']}, capacity: {vehicle['capacity']}" 
 
 
 

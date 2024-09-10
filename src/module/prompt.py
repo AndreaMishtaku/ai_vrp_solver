@@ -3,7 +3,7 @@ Solve this Vehicle Routing Problem (VRP) given the following details:
 Locations:
 {locations}
 
-Distances:
+Distances between nodes and depots which is the same in both directions:
 {distances}
 
 Vehicles and Depots:
