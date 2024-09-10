@@ -26,11 +26,21 @@ class LLMService:
             
             prompt_inputs={
                 'locations':locations_str,
+                'distance_matrix': [[0, 39, 156, 165, 88, 125, 132, 102],
+                                    [39, 0, 173, 187, 111, 143, 147, 116],
+                                    [156, 173, 0, 25, 70, 31, 27, 57],
+                                    [165, 187, 25, 0, 77, 46, 47, 73],
+                                    [88, 111, 70, 77, 0, 40, 49, 28],
+                                    [125, 143, 31, 46, 40, 0, 12, 28],
+                                    [132, 147, 27, 47, 49, 12, 0, 31],
+                                    [102, 116, 57, 73, 28, 28, 31, 0]],
+                'original_index' : [1, 3, 55, 56, 59, 65, 66, 79],
                 'distances': distances_str,
                 'vehicle_depo':  vehicle_depo_str,
                 "schema": solver.parser.get_format_instructions()
             }
 
+            print(solver.prompt)
             result = solver.solve(inputs=prompt_inputs)
 
             end_time = time()
@@ -127,16 +137,16 @@ def get_formatted_data(depos, nodes, edges, vehicles, demands, vehicle_depo):
 
     # Provide location info
     location_strings = [
-        f"Depo {location['id']}: {location['name']} with capacity {location['capacity']}\n"
+        f"Depo with id {location['id']}: {location['name']} with capacity {location['capacity']}\n"
         if location['type'] == 'DEPO' else 
-        f"Node {location['id']}: {location['name']} with demand: {next((demand['demand'] for demand in demands if demand['node'] == location['name']), None)}\n"
+        f"Node with id {location['id']}: {location['name']} with demand: {next((demand['demand'] for demand in demands if demand['node'] == location['name']), None)}\n"
         for location in locations
     ]
 
     locations_str = ''.join(location_strings)
 
     distance_strings = []
-    processed_pairs = []  # List to keep track of processed pairs
+    processed_pairs = [] 
     
     for i in range(n):
         for j in range(n):
@@ -155,11 +165,11 @@ def get_formatted_data(depos, nodes, edges, vehicles, demands, vehicle_depo):
                 reverse_distance = distance_matrix[j][i]
                 
                 if distance != float('inf') and reverse_distance != float('inf'):
-                    distance_strings.append(f"{start_id} to {end_id}: {distance} and {end_id} to {start_id}: {reverse_distance}, ")
+                    distance_strings.append(f"from id {start_id} to id {end_id}: {distance} km and from id {end_id} to  id{start_id}: {reverse_distance} km ")
                 
                 processed_pairs.append(pair)
     
-    distances_str = ', '.join(distance_strings)
+    distances_str = '\n'.join(distance_strings)
 
     vehicle_depo_str='Depo | Vehicle\n'
     for vd in vehicle_depo:
